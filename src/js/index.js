@@ -1,17 +1,17 @@
 // A set of constants required for the bot to run. A brief explanation of each follows to the right.
 const DEBUG = false, // Debug mode is required for some sommands and featured. If you would like to turn debug mode on, change "false" to "true".
-      PREFIX = DEBUG ? '_ka!' : 'ka!', // The prefix here is specified based on debug mode, but it can also be specified globally.
+      PREFIX = DEBUG ? '_ka!' : 'k!', // The prefix here is specified based on debug mode, but it can also be specified globally.
       COLORS = { // This defines the colors the bot uses. @TODO "Complete" needs to be used more often.
         INFORMATION: '#ff9595',
         COMPLETE: '#b44949',
         ERROR: '#FF0000'
       },
       RELOAD_CHANNEL = '460219376654876673', // Upon bot reload/error, a message is sent to this channel.
-      PING_USER = '198942810571931649', // This user is pinged when the bot has an error.
-      CALLBACK_URL = ['http://ukb.herokuapp.com/login/', 'http://localhost/login/'][DEBUG&1], // This website is used to log users in. It is currently specified by debug, but it can be set by string.
-      KA = 'www.khanacademy.org', // Khan Academy's address.
-      PORT = process.env.PORT || 80, // The website is hosted off of this port, which is set by an environment variable when the bot is run.
-      FUN_WORDS = { // These phrases are an easter egg that are used when the bot is pinged.
+      PING_USER = '226887818364846082', // Matthias, This user is pinged when the bot has an error
+      CALLBACK_URL = ['http://linkka.learnerpages.com', 'http://localhost/login/'][DEBUG&1], // This website is used to log users in. It is currently specified by debug, but it can be set by string.
+      KA = 'www.khanacademy.org', 
+      PORT = 4000, // The website is hosted off of this port
+      FUN_WORDS = {
         'this is so sad': 'alexa play despacito',
         'can we get 50 likes': 'no',
         'tucker is better': 'die lol',
@@ -40,8 +40,10 @@ var version = '0.0.0', // Bot version, defaults to 0.0.0
     commandsRun = 0, // Total commands run
     markedForReLogin = [], // An array of people who need to re-login to their accounts.
     overrideStars = [],
-    noStars = [],
-    { TOKEN, SECRET, KEY, DATABASE_URL, HOOK_KEY, HOOK_ID, SHOOK_KEY, SHOOK_ID } = process.env; // token, secret, key, etc, needed for login and set by env vars
+    noStars = [];
+    //{ TOKEN, SECRET, KEY, DATABASE_URL, HOOK_KEY, HOOK_ID, SHOOK_KEY, SHOOK_ID } = process.env; // token, secret, key, etc, needed for login and set by env vars
+
+const { TOKEN, SECRET, KEY, DATABASE_URL } = require('../../passwords.json');
 
 // Fill badge cache with Khan Academy's default exposed badges to prevent long load times
 request("https://www.khanacademy.org/api/v1/badges", function(error, response, body){
@@ -66,26 +68,6 @@ fs.readFile(__dirname + '/../../package.json', 'utf-8', (err, response) => {
   var data = JSON.parse(response);
   version = data.version;
 })
-
-// Use debug parameters if debug is enabled
-if(DEBUG){
-  var dbTokens = JSON.parse(fs.readFileSync(__dirname + '/secret.json'));
-  TOKEN = dbTokens.token;
-  SECRET = dbTokens.secret;
-  KEY = dbTokens.key;
-  DATABASE_URL = dbTokens.databaseUrl
-  DB = {
-    USER: dbTokens.user,
-    HOST: dbTokens.host,
-    DB: dbTokens.db,
-    PASSWORD: dbTokens.password,
-    PORT: dbTokens.port
-  }
-  HOOK_KEY = dbTokens.hook_key;
-  HOOK_ID = dbTokens.hook_id;
-  SHOOK_KEY = dbTokens.shook_key;
-  SHOOK_ID = dbTokens.shook_id;
-}
 
 // Readline instant evaluation
 const rl = readline.createInterface({
@@ -844,32 +826,6 @@ var commands = {
     documentation: 'Makes a new announcement',
     permissions: ["ADMINISTRATOR"]
   },
-  oopsify: {
-    run(message, arg){
-      var oops = arg.replace(/\@everyone|\@here/gim, '').replace(/\.\.\./gim, '.').replace(/^\b\w|[\.!?]\W+\w/gim, (match) => {
-        return match.toUpperCase();
-      })
-      if(Math.random() < 0.7){
-        oops = oops.replace(/([\!\.\?])/gim, function(a, b) {return b + (Math.random() < 0.6 ? "ENDSENT" : "");}).split(/ENDSENT/g);
-        var whoopsies = "";
-        for(var i = 0; i < oops.length; i++) {
-            whoopsies += (i + 1) + ". " + oops[i].trim() + (i+1!==oops.length ? "\u2435" : "");
-        }
-        oops = whoopsies;
-      }
-      oops = oops.replace(/[^0-9](\.)/gim, (match) => {
-        return match.replace(/\./gm, '') + ('!'.repeat(Math.floor(Math.random()*5)) + '?'.repeat(Math.floor(Math.random()*5))).split('').sort(function(){return 0.5-Math.random()}).join('');
-      }).replace(/(\s)/gim, (match) => {
-        var xD = Math.floor(Math.random()*18);
-        return [' :) ', ' :( ', ' o\\_O ', ' ^.^ ', ' -\\_- ', ' xD ', ' ^-^ ', ' 8D ', ' :D ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '][xD]
-      }).replace(/\u2435/gim, '\n') + "!!";
-      message.channel.send(oops)
-        .catch(e => {
-          message.channel.send(':( I don\'t think I can send it, it\'s a bit too long!! o\\_O')
-        })
-    },
-    documentation: 'Does some stuff to messages!!?! o_O'
-  },
   cat: {
     run(message, args){
       request('http://aws.random.cat/meow', (error, response, body) => {
@@ -1005,7 +961,7 @@ for(var i in commands){
 webClient.engine('html', require('ejs').renderFile);
 webClient.set('views', '.');
 webClient.use( express.static( "src/public" ) );
-webClient.get('/login/', function (req, res) {
+webClient.get('/', function (req, res) {
   res.render('src/html/index.html')
   const { query } = req;
   console.log('[UKB] Webserver connection acquired.')
